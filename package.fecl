@@ -1,0 +1,6 @@
+author = 'Electrux';
+name = 'Orchestrate';
+version = '0.0.1';
+description = 'Orchestrate remote machines - deploy and manage software/config on them.';
+source = 'https://github.com/Feral-Lang/WhatToDo';
+# depends = {};
