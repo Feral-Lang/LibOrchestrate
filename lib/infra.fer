@@ -4,6 +4,7 @@ let os = import('std/os');
 let vec = import('std/vec');
 let json = import('std/json');
 let logging = import('std/logging');
+let bytebuffer = import('std/bytebuffer');
 
 let ssh = import('ssh/ssh');
 
@@ -112,7 +113,9 @@ let install in Infra = fn(.kw, localPath, remotePath) {
 };
 
 let installFrom in Infra = fn(.kw, localPath, remotePath) {
-    let data = fs.fopen(localPath).readAll().trim();
+    let f = fs.fopen(localPath);
+    let data = bytebuffer.new(f.len());
+    f.readBytes(data);
     let perms = '';
     if os.name == 'macos' {
         os.exec(out = perms, 'stat', '-f', '"%A"', localPath.str());
@@ -126,12 +129,12 @@ let installData in Infra = fn(.kw, remotePath, dataTmp, perms = '') {
     let isTrunc = kw['trunc'] ?? false;
     let isTempl = kw['templ'] ?? false;
     inline if isTempl {
-        let data = os.applyEnv(dataTmp);
+        let data = os.applyEnv(dataTmp.str()).bytes();
     } else {
         let data = ref(dataTmp);
     }
     let parentDir = remotePath.parent();
-    io.cprintln(prefix(), ' {y}installing {c}', remotePath, '{0} ...');
+    io.cprintln(prefix(), ' {y}installing {c}', remotePath, ' {0}({c}', data.len(), ' {y}bytes{0}) {0} ...');
     ++depth;
     let updated = false;
     if !self.exists(kw..., remotePath) {
@@ -242,7 +245,7 @@ let readFile in Infra = fn(.kw, path) {
     }
     if show { io.cprint(prefix(), ' {y}reading', isReadingTmp, ' file {c}', tmpPath, ' {0}... '); }
     let f = self.sftp.openFile(tmpPath);
-    let data = expect(self.sftp.readFile(f)).trim();
+    let data = expect(self.sftp.readFile(f));
     expect(f.close());
     if show { io.cprintln('{c}', data.len(), ' {g}bytes{0}'); }
     if sudo {
